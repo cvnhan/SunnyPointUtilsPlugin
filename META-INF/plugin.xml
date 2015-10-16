@@ -1,0 +1,58 @@
+<idea-plugin version="2">
+  <id>com.sunnypoint.unique.plugin.20151016</id>
+  <name>SunnyPointUtils</name>
+  <version>1.0</version>
+  <vendor email="nhancv@sunnypoints.net" url="http://sunnypoint.jp/">SunnyPoint</vendor>
+
+  <description><![CDATA[
+      Plugin very useful<br>
+      <em>- Pull db file with format name is "main.db" to PC</em><br>
+      <em>- Show sqlBrowser depend on db file</em>
+    ]]></description>
+
+  <change-notes><![CDATA[
+      No any change note here at this time<br>
+      <em></em>
+    ]]>
+  </change-notes>
+
+  <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
+  <idea-version since-build="131"/>
+
+  <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
+       on how to target different products -->
+  <!-- uncomment to enable plugin in all products
+  <depends>com.intellij.modules.lang</depends>
+  -->
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+  <application-components>
+    <!-- Add your application components here -->
+  </application-components>
+
+  <project-components>
+    <!-- Add your project components here -->
+  </project-components>
+
+  <actions>
+    <!-- Add your actions here -->
+    <group id="SunnyPoint.PluginUtils" text="_SunnyPoint" description="SunnyPoint plugin utils">
+      <add-to-group group-id="MainMenu" anchor="last"  />
+
+      <action id="SunnyPoint.getDbunroot" class="GetDb" text="GetDb unroot"
+              description="Get sqlite db for UNROOT android device.">
+        <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl U"/>
+      </action>
+      <action id="SunnyPoint.getDbrooted" class="GetDb" text="GetDb rooted"
+              description="Get sqlite db for rooted android device.">
+        <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl R"/>
+      </action>
+    </group>
+
+
+  </actions>
+
+</idea-plugin>
