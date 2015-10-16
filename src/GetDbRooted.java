@@ -19,18 +19,21 @@ public class GetDbRooted extends AnAction {
         super();
 //            file:/C:/Users/NhanCao/.IntelliJIdea14/config/plugins/SunnyPoint/lib/SunnyPoint.jar!/config.txt
 //            cmd.exe /c cd C:\Users\NhanCao\.IntelliJIdea14\config\plugins\SunnyPoint\lib && jar xf SunnyPoint.jar sqlitebrowser
+        path_plugins = this.getClass().getResource("config.txt").getPath().replace("file:/", "").replace("SunnyPoint.jar!/config.txt", "");
+        extractResource();
+    }
+    public void extractResource(){
         try {
-            path_plugins = this.getClass().getResource("config.txt").getPath().replace("file:/", "").replace("SunnyPoint.jar!/config.txt", "");
             //extract sqlitebrowser in jar file
-            File f = new File(path_plugins + "sqlitebrowser");
+            File f = new File(path_plugins+"sqlitebrowser");
             if (!f.exists()) {
                 runtime.exec("cmd.exe /c cd " + path_plugins + " && jar xf SunnyPoint.jar sqlitebrowser");
             }
         } catch (IOException e) {
             e.printStackTrace();
+            Messages.showErrorDialog(e.toString(), "error");
         }
     }
-
     public void actionPerformed(AnActionEvent event) {
         try {
 
@@ -49,6 +52,7 @@ public class GetDbRooted extends AnAction {
 //                Messages.showErrorDialog(e.toString(), "error");
 //
 //            }
+            extractResource();
             String packagename = Messages.showInputDialog(project, "What is your package name?", "Input your package name", Messages.getQuestionIcon());
             if (packagename == null || packagename.length() == 0) {
                 packagename = "com.lcl.sunnypoints";
@@ -60,7 +64,7 @@ public class GetDbRooted extends AnAction {
             }
         } catch (Exception e) {
             e.printStackTrace();
-//            Messages.showErrorDialog(e.toString(), "error");
+            Messages.showErrorDialog(e.toString(), "error");
         }
     }
 
