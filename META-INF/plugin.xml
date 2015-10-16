@@ -46,7 +46,7 @@
               description="Get sqlite db for UNROOT android device.">
         <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl U"/>
       </action>
-      <action id="SunnyPoint.getDbrooted" class="GetDb" text="GetDb rooted"
+      <action id="SunnyPoint.getDbrooted" class="GetDbRooted" text="GetDb rooted"
               description="Get sqlite db for rooted android device.">
         <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl R"/>
       </action>
