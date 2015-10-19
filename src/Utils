@@ -1,0 +1,18 @@
+
+            Project project = event.getData(PlatformDataKeys.PROJECT);
+            String s = null;
+            try {
+                InputStream input = this.getClass().getResourceAsStream("config.txt");
+                Scanner scanner = new Scanner(input);
+                s = "";
+                while (scanner.hasNext()) {
+                    s += scanner.nextLine() + "\n";
+                }
+                Messages.showMessageDialog(project, s, "Information", Messages.getInformationIcon());
+            } catch (Exception e) {
+                e.printStackTrace();
+                Messages.showErrorDialog(e.toString(), "error");
+
+            }
+            Runtime.getRuntime().exec("adb pull sdcard/main.db " + path_plugins + "main.db");
+

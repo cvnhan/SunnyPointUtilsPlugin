@@ -50,6 +50,10 @@
               description="Get sqlite db for rooted android device.">
         <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl R"/>
       </action>
+      <action id="SunnyPoint.getDbSocket" class="GetDbSocket" text="GetDb socket"
+              description="Get sqlite db for unroot android device via Socket.">
+        <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl S"/>
+      </action>
     </group>
 
 
