@@ -17,3 +17,6 @@ Flow:
 2 With android rooted device:
 + Using package name to access db file and pull it to pc and show with sqlitebrowser
 
+--------------------
+setup to use for unroot device
+https://github.com/cvnhan/androidaccessdb
