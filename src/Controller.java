@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.Messages;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * Created by NhanCao on 19-Oct-15.
@@ -16,7 +17,7 @@ public class Controller {
 //            cmd.exe /c cd C:\Users\NhanCao\.IntelliJIdea14\config\plugins\SunnyPoint\lib && jar xf SunnyPoint.jar sqlitebrowser
 
     private static Controller instance = new Controller();
-    private static boolean successSocket = false;
+    private static boolean isWakeupNeeded = false;
     private Runtime runtime = Runtime.getRuntime();
     private String path_plugins = "";
     private int port = 1234;
@@ -76,76 +77,102 @@ public class Controller {
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "error");
+            Messages.showErrorDialog(e.toString(), "UnRoot error");
 
         }
     }
 
+    private static final class Lock {
+        public boolean success = false;
+    }
+
+    private final Lock lock = new Lock();
+
     public void actionSocket(AnActionEvent event) {
         try {
-//            if (successSocket) {
-//                Gson gson = new Gson();
-//                String json = gson.toJson(new Config(serverName, port));
-//                writeConfigFile(json);
-//                successSocket = false;
-//            }
             Config config = readConfigFile();
             serverName = config.serverName;
             port = config.port;
         } catch (Exception e) {
             e.printStackTrace();
-            String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), getIPAndroid() + ":" + port, null);
-            int index = hostStr.indexOf(":");
-            serverName = hostStr.substring(0, index);
-            port = Integer.parseInt(hostStr.substring(index + 1));
-
-            Gson gson = new Gson();
-            String json = gson.toJson(new Config(serverName, port));
-            try {
-                writeConfigFile(json);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            successSocket = false;
+            inputIPAddr();
         }
         try {
             extractResource();
             Thread t = new SocketClient();
             t.start();
+            synchronized (lock) {
+                while (!isWakeupNeeded) {
+                    lock.wait();
+                }
+                if (lock.success == false) {
+                    inputIPAddr();
+                }
+                isWakeupNeeded = false;
 
-            Gson gson = new Gson();
-            String json = gson.toJson(new Config(serverName, port));
-            writeConfigFile(json);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "error");
+            Messages.showErrorDialog(e.toString(), "Socket error");
         }
-
     }
 
-    private void setupConnect() throws Exception {
+    private void setupConnect() {
         System.out.println("Connecting to " + serverName +
                 " on port " + port);
-        Socket client = new Socket(serverName, port);
-        client.setSoTimeout(500);
-        System.out.println("Just connected to "
-                + client.getRemoteSocketAddress());
-        OutputStream outToServer = client.getOutputStream();
-        DataOutputStream out = new DataOutputStream(outToServer);
+        Socket client = null;
+        try {
+            client = new Socket(serverName, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+            lock.success = false;
+            return;
+        }
+        try {
+            client.setSoTimeout(500);
+        } catch (SocketException e) {
+            e.printStackTrace();
+            lock.success = false;
+            return;
+        }
+        try {
+            System.out.println("Just connected to "
+                    + client.getRemoteSocketAddress());
+            OutputStream outToServer = client.getOutputStream();
+            DataOutputStream out = new DataOutputStream(outToServer);
 //            out.writeUTF("Hello from "
 //                    + client.getLocalSocketAddress());
-        out.writeUTF("getDB");
-        InputStream inFromServer = client.getInputStream();
-        DataInputStream in =
-                new DataInputStream(inFromServer);
-        if (in.readUTF().contains("Ok")) {
-            actionUnRoot(null);
+            out.writeUTF("getDB");
+            InputStream inFromServer = client.getInputStream();
+            DataInputStream in =
+                    new DataInputStream(inFromServer);
+            if (in.readUTF().contains("Ok")) {
+                actionUnRoot(null);
+            }
+            System.out.println("Server says " + in.readUTF());
+            if (client != null)
+                client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        System.out.println("Server says " + in.readUTF());
+        lock.success = true;
+    }
 
-        client.close();
+    private void inputIPAddr() {
+        String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), getIPAndroid() + ":" + port, null);
+        int index = hostStr.indexOf(":");
+        serverName = hostStr.substring(0, index);
+        port = Integer.parseInt(hostStr.substring(index + 1));
+
+        Gson gson = new Gson();
+        String json = gson.toJson(new Config(serverName, port));
+        try {
+            writeConfigFile(json);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
     }
 
     private String getIPAndroid() {
@@ -192,16 +219,21 @@ public class Controller {
 
     public class SocketClient extends Thread {
         public SocketClient() throws IOException {
-            serverName = getIPAndroid();
-            //
+//            serverName = getIPAndroid();
         }
 
         public void run() {
             try {
                 setupConnect();
+                isWakeupNeeded = false;
             } catch (Exception e) {
                 System.out.println(e.toString());
                 e.printStackTrace();
+            } finally {
+                synchronized (lock) {
+                    isWakeupNeeded = true;
+                    lock.notifyAll();
+                }
             }
         }
     }

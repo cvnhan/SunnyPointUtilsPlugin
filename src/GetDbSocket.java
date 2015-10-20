@@ -12,6 +12,11 @@ public class GetDbSocket extends AnAction {
         Controller.getInstance();
     }
 
+    @Override
+    public void update(AnActionEvent e) {
+        super.update(e);
+    }
+
     public void actionPerformed(AnActionEvent event) {
         try {
             Controller.getInstance().actionSocket(event);
