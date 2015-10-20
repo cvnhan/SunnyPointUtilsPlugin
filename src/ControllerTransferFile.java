@@ -1,7 +1,5 @@
 import com.google.gson.Gson;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
 import java.io.*;
@@ -48,32 +46,13 @@ public class ControllerTransferFile {
         }
     }
 
-    public void actionRooted(AnActionEvent event) {
-        try {
-            Project project = event.getData(PlatformDataKeys.PROJECT);
-            extractResource();
-            String packagename = Messages.showInputDialog(project, "What is your package name?", "Input your package name", Messages.getQuestionIcon());
-            if (packagename == null || packagename.length() == 0) {
-                packagename = "com.lcl.sunnypoints";
-            }
-            File f = new File(path_plugins + "sqlitebrowser");
-            if (f.exists() && f.isDirectory()) {
-                runtime.exec("TASKKILL /F /IM sqliteman.exe");
-                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + path_plugins + " " + packagename);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Messages.showErrorDialog(e.toString(), "error");
-        }
-    }
-
-    public void actionUnRoot(AnActionEvent event) {
+    public void actionOpenFile() {
         try {
             extractResource();
             File f = new File(path_plugins + "sqlitebrowser");
             if (f.exists() && f.isDirectory()) {
                 runtime.exec("TASKKILL /F /IM sqliteman.exe");
-                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + path_plugins);
+                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " +Constant.COMMAND_GETFILE + " "+ path_plugins);
             }
 
         } catch (Exception e) {
@@ -148,7 +127,7 @@ public class ControllerTransferFile {
                 int fileSize = in.readInt();
                 receiveFile(client, fileSize);
                 if (in.readUTF().contains("Ok")) {
-//                    actionUnRoot(null);
+                    actionOpenFile();
                 }
                 System.out.println("Server says " + in.readUTF());
             } else if (type == TransferType.SEND) {

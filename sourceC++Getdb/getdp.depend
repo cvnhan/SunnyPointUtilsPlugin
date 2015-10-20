@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1445321203 source:c:\users\nhancao\documents\projectsidea\sunnypoint\sourcec++getdb\main.cpp
+	<iostream>
+	<cstdio>
+	<conio.h>
+	<string>
+	<string.h>
+	<vector>
+	<Windows.h>
+	<ctime>
+

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <vector>
 #include <Windows.h>
+#include <ctime>
 using namespace std;
 
 string exec(char* cmd) {
@@ -20,15 +21,33 @@ string exec(char* cmd) {
     pclose(pipe);
     return result;
 }
-
-//test.exe "path to main db"
+void sleep(long miliseconds)
+{
+    clock_t start=clock();
+    while(clock() - start < miliseconds); ///loop until time's up
+}
 
 int main(int argc, char* argv[])
 {
     system("adb devices");
-    if(argc==3 || argc==1){
-        string path=argv[1];
-        string package=argv[2];
+
+    //getdp.exe [code] [option]
+
+    string code=argv[1];
+    if(code=="unroot"){
+        string path=argv[2];
+        string command2="adb pull sdcard/main.db "+ path +"main.db";
+        char* cmd2= new char[command2.length()+1];
+        strcpy(cmd2, command2.c_str());
+        exec(cmd2);
+        command2=path+"sqlitebrowser/sqliteman.exe "+path+"main.db";
+        cmd2= new char[command2.length()+1];
+        strcpy(cmd2, command2.c_str());
+        sleep(1000);
+        exec(cmd2);
+    }else if(code=="rooted"){
+        string path=argv[2];
+        string package=argv[3];
         if(package=="") package="com.lcl.sunnypoints";
         string command="adb shell su -c cp /data/data/"+package+"/databases/main.db sdcard/main.db";
         string command2="adb pull sdcard/main.db "+ path +"main.db";
@@ -38,28 +57,20 @@ int main(int argc, char* argv[])
         strcpy(cmd2, command2.c_str());
         exec(cmd);
         exec(cmd2);
-
         command2=path+"sqlitebrowser/sqliteman.exe "+path+"main.db";
         cmd2= new char[command2.length()+1];
         strcpy(cmd2, command2.c_str());
+        sleep(1000);
         exec(cmd2);
-
-        system("pause");
-    }else if(argc==2){
-        string path=argv[1];
-        string command2="adb pull sdcard/main.db "+ path +"main.db";
+    }else if(code=="socketgetfile"){
+        string path=argv[2];
+        string command2=path+"sqlitebrowser/sqliteman.exe "+path+"main.db";
         char* cmd2= new char[command2.length()+1];
         strcpy(cmd2, command2.c_str());
+        sleep(500);
         exec(cmd2);
-
-        command2=path+"sqlitebrowser/sqliteman.exe "+path+"main.db";
-        cmd2= new char[command2.length()+1];
-        strcpy(cmd2, command2.c_str());
-        exec(cmd2);
-
-        system("pause");
-
     }
 
+    system("pause");
     return 0;
 }

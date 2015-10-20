@@ -57,7 +57,7 @@ public class Controller {
             File f = new File(path_plugins + "sqlitebrowser");
             if (f.exists() && f.isDirectory()) {
                 runtime.exec("TASKKILL /F /IM sqliteman.exe");
-                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + path_plugins + " " + packagename);
+                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + Constant.COMMAND_ROOTED + " " + path_plugins + " " + packagename);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,7 +71,7 @@ public class Controller {
             File f = new File(path_plugins + "sqlitebrowser");
             if (f.exists() && f.isDirectory()) {
                 runtime.exec("TASKKILL /F /IM sqliteman.exe");
-                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + path_plugins);
+                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + Constant.COMMAND_UNROOT + " " + path_plugins);
             }
 
         } catch (Exception e) {
@@ -237,15 +237,6 @@ public class Controller {
             }
         }
     }
-
-
-
-
-
-
-
-
-
 
 
 }
