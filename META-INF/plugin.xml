@@ -54,6 +54,12 @@
               description="Get sqlite db for unroot android device via Socket.">
         <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl S"/>
       </action>
+      <action id="SunnyPoint.getDbSocketreceiveFile" class="GetDbSocketReceiveFile" text="GetDb socket receive file"
+              description="Get sqlite db for unroot android device by ip:port via Socket.">
+      </action>
+      <action id="SunnyPoint.getDbSocketSendFile" class="GetDbSocketSendFile" text="GetDb socket send file"
+              description="Send db file to unroot android device via Socket.">
+      </action>
     </group>
 
 

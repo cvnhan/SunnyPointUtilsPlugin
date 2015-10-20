@@ -1,0 +1,21 @@
+<option value="AT01">10分</option>
+<option value="AT02">20分</option>
+<option value="AT03">30分</option>
+<option value="AT04">40分</option>
+<option value="AT05">50分</option>
+<option value="AT06">60分</option>
+<option value="AT15">70分</option>
+<option value="AT16">80分</option>
+<option value="AT07" selected="selected">90分</option>
+<option value="AT17">100分</option>
+<option value="AT08">120分</option>
+<option value="AT09">150分</option>
+<option value="AT10">180分</option>
+<option value="AT18">3時間30分</option>
+<option value="AT11">4時間</option>
+<option value="AT19">4時間30分</option>
+<option value="AT12">5時間</option>
+<option value="AT20">5時間30分</option>
+<option value="AT13">6時間</option>
+<option value="AT21">6時間30分</option>
+<option value="AT14">7時間</option>
