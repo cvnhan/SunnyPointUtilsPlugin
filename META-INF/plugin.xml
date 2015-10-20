@@ -1,13 +1,16 @@
 <idea-plugin version="2">
   <id>com.sunnypoint.unique.plugin.20151016</id>
   <name>SunnyPointUtils</name>
-  <version>1.0</version>
+    <version>1.3</version>
   <vendor email="nhancv@sunnypoints.net" url="http://sunnypoint.jp/">SunnyPoint</vendor>
 
   <description><![CDATA[
       Plugin very useful<br>
-      <em>- Pull db file with format name is "main.db" to PC</em><br>
-      <em>- Show sqlBrowser depend on db file</em>
+      <em>- Get db unroot android device</em><br>
+      <em>- Get db rooted android device</em><br>
+      <em>- Get db via socket android device</em><br>
+      <em>- Get db via socket get file</em><br>
+      <em>- Get db via socket send file</em><br>
     ]]></description>
 
   <change-notes><![CDATA[
