@@ -48,7 +48,6 @@ public class ServerSocketTest extends Thread {
                 DataOutputStream out =
                         new DataOutputStream(server.getOutputStream());
                 solveOptions(server,in, out);
-                out.writeUTF("Ok - " + server.getLocalSocketAddress());
                 server.close();
             } catch (SocketTimeoutException s) {
                 SPAccessConfigs.loge("Socket timed out!");
@@ -65,12 +64,13 @@ public class ServerSocketTest extends Thread {
         SPAccessConfigs.loge(input);
         try {
             if (input.equals(SPAccessConfigs.GETDP_COMMAND) && SPAccessConfigs.isRegisterBackup()){
-
+                out.writeUTF("Ok - " + socket.getLocalSocketAddress());
             }else if(input.equals(GETFILESK_COMMAND)){
                 sendFile(socket, out);
             }else if(input.contains(SETFILESK_COMMAND)){
                 int fileSize=in.readInt();
                 receiveFile(socket,fileSize);
+                out.writeUTF("Ok - " + socket.getLocalSocketAddress());
             }
         } catch (IOException e) {
             e.printStackTrace();

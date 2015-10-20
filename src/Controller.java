@@ -18,6 +18,7 @@ public class Controller {
 
     private static Controller instance = new Controller();
     private static boolean isWakeupNeeded = false;
+    private final Lock lock = new Lock();
     private Runtime runtime = Runtime.getRuntime();
     private String path_plugins = "";
     private int port = 1234;
@@ -76,17 +77,11 @@ public class Controller {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
             Messages.showErrorDialog(e.toString(), "UnRoot error");
 
         }
     }
-
-    private static final class Lock {
-        public boolean success = false;
-    }
-
-    private final Lock lock = new Lock();
 
     public void actionSocket(AnActionEvent event) {
         try {
@@ -114,14 +109,13 @@ public class Controller {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
             Messages.showErrorDialog(e.toString(), "Socket error");
         }
     }
 
     private void setupConnect() {
-        System.out.println("Connecting to " + serverName +
-                " on port " + port);
+        //System.out.println("Connecting to " + serverName + " on port " + port);
         Socket client = null;
         try {
             client = new Socket(serverName, port);
@@ -138,8 +132,7 @@ public class Controller {
             return;
         }
         try {
-            System.out.println("Just connected to "
-                    + client.getRemoteSocketAddress());
+            //System.out.println("Just connected to " + client.getRemoteSocketAddress());
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
 //            out.writeUTF("Hello from "
@@ -151,7 +144,7 @@ public class Controller {
             if (in.readUTF().contains("Ok")) {
                 actionUnRoot(null);
             }
-            System.out.println("Server says " + in.readUTF());
+            //System.out.println("Server says " + in.readUTF());
             if (client != null)
                 client.close();
         } catch (IOException e) {
@@ -200,7 +193,7 @@ public class Controller {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
         }
         return host;
     }
@@ -217,6 +210,10 @@ public class Controller {
         writer.close();
     }
 
+    private static final class Lock {
+        public boolean success = false;
+    }
+
     public class SocketClient extends Thread {
         public SocketClient() throws IOException {
 //            serverName = getIPAndroid();
@@ -227,7 +224,7 @@ public class Controller {
                 setupConnect();
                 isWakeupNeeded = false;
             } catch (Exception e) {
-                System.out.println(e.toString());
+                //System.out.println(e.toString());
                 e.printStackTrace();
             } finally {
                 synchronized (lock) {

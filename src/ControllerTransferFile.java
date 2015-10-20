@@ -1,4 +1,3 @@
-import com.google.gson.Gson;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.Messages;
 
@@ -18,6 +17,7 @@ public class ControllerTransferFile {
 
     private static ControllerTransferFile instance = new ControllerTransferFile();
     private static boolean isWakeupNeeded = false;
+    private final Lock lock = new Lock();
     private Runtime runtime = Runtime.getRuntime();
     private String path_plugins = "";
     private int port = 1234;
@@ -52,22 +52,16 @@ public class ControllerTransferFile {
             File f = new File(path_plugins + "sqlitebrowser");
             if (f.exists() && f.isDirectory()) {
                 runtime.exec("TASKKILL /F /IM sqliteman.exe");
-                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " +Constant.COMMAND_GETFILE + " "+ path_plugins);
+                runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + Constant.COMMAND_GETFILE + " " + path_plugins);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
             Messages.showErrorDialog(e.toString(), "UnRoot error");
 
         }
     }
-
-    private static final class Lock {
-        public boolean success = false;
-    }
-
-    private final Lock lock = new Lock();
 
     public void actionSocketReceiveFile(AnActionEvent event) {
         inputIPAddr();
@@ -77,7 +71,7 @@ public class ControllerTransferFile {
             t.start();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
             Messages.showErrorDialog(e.toString(), "Socket error");
         }
     }
@@ -90,14 +84,13 @@ public class ControllerTransferFile {
             t.start();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
             Messages.showErrorDialog(e.toString(), "Socket error");
         }
     }
 
     private void setupConnect(TransferType type) {
-        System.out.println("Connecting to " + serverName +
-                " on port " + port);
+        //System.out.println("Connecting to " + serverName + " on port " + port);
         Socket client = null;
         try {
             client = new Socket(serverName, port);
@@ -114,8 +107,7 @@ public class ControllerTransferFile {
             return;
         }
         try {
-            System.out.println("Just connected to "
-                    + client.getRemoteSocketAddress());
+            //System.out.println("Just connected to " + client.getRemoteSocketAddress());
 
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
@@ -126,10 +118,7 @@ public class ControllerTransferFile {
                         new DataInputStream(inFromServer);
                 int fileSize = in.readInt();
                 receiveFile(client, fileSize);
-                if (in.readUTF().contains("Ok")) {
-                    actionOpenFile();
-                }
-                System.out.println("Server says " + in.readUTF());
+                actionOpenFile();
             } else if (type == TransferType.SEND) {
                 out.writeUTF(SETFILESK_COMMAND);
                 sendFile(client, out);
@@ -147,14 +136,6 @@ public class ControllerTransferFile {
         int index = hostStr.indexOf(":");
         serverName = hostStr.substring(0, index);
         port = Integer.parseInt(hostStr.substring(index + 1));
-
-        Gson gson = new Gson();
-        String json = gson.toJson(new Config(serverName, port));
-        try {
-            writeConfigFile(json);
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
     }
 
     private String getIPAndroid() {
@@ -182,25 +163,47 @@ public class ControllerTransferFile {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println(e.toString());
+            //System.out.println(e.toString());
         }
         return host;
     }
 
-    private Config readConfigFile() throws Exception {
-        BufferedReader br = new BufferedReader(
-                new FileReader(path_plugins + "sqlitebrowser/config.txt"));
-        return new Gson().fromJson(br, Config.class);
+    private void receiveFile(Socket client, int fileSize) throws IOException {
+        InputStream is = client.getInputStream();
+        int bytesRead;
+        int byteCounts = 0;
+        OutputStream output = new FileOutputStream(path_plugins + "main.db");
+        int sizeBuffer = 1024;
+        byte[] buffer = new byte[sizeBuffer];
+        while ((bytesRead = is.read(buffer, 0, Math.max(sizeBuffer, Math.min(sizeBuffer, fileSize - byteCounts)))) != -1) {
+            output.write(buffer, 0, bytesRead);
+            byteCounts += bytesRead;
+            if (byteCounts >= fileSize) {
+                break;
+            }
+        }
+        output.close();
     }
 
-    private void writeConfigFile(String json) throws IOException {
-        FileWriter writer = new FileWriter(path_plugins + "sqlitebrowser/config.txt");
-        writer.write(json);
-        writer.close();
+    private void sendFile(Socket client, DataOutputStream out) throws IOException {
+        File myFile = new File(path_plugins + "main.db");
+        out.writeInt((int) myFile.length());
+        byte[] mybytearray = new byte[(int) myFile.length()];
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(myFile));
+        bis.read(mybytearray, 0, mybytearray.length);
+        OutputStream os = client.getOutputStream();
+        os.write(mybytearray, 0, mybytearray.length);
+        os.flush();
+        bis.close();
+        os.close();
     }
 
     enum TransferType {
         SEND, RECEIVE
+    }
+
+    private static final class Lock {
+        public boolean success = false;
     }
 
     public class SocketClientTransferFile extends Thread {
@@ -216,7 +219,7 @@ public class ControllerTransferFile {
                 setupConnect(type);
                 isWakeupNeeded = false;
             } catch (Exception e) {
-                System.out.println(e.toString());
+                //System.out.println(e.toString());
                 e.printStackTrace();
             } finally {
                 synchronized (lock) {
@@ -225,28 +228,5 @@ public class ControllerTransferFile {
                 }
             }
         }
-    }
-
-    private void receiveFile(Socket client, int fileSize) throws IOException {
-        byte[] mybytearray = new byte[fileSize];
-        InputStream is = client.getInputStream();
-        FileOutputStream fos = new FileOutputStream(path_plugins + "main.db");
-        BufferedOutputStream bos = new BufferedOutputStream(fos);
-        int bytesRead = is.read(mybytearray, 0, mybytearray.length);
-        bos.write(mybytearray, 0, bytesRead);
-        bos.close();
-    }
-
-    private void sendFile(Socket client, DataOutputStream out) throws IOException {
-        File myFile = new File(path_plugins + "main.db");
-        out.writeInt((int) myFile.length());
-        byte[] mybytearray = new byte[(int) myFile.length()];
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(myFile));
-        bis.read(mybytearray, 0, mybytearray.length);
-        OutputStream os = client.getOutputStream();
-        os.write(mybytearray, 0, mybytearray.length);
-        os.flush();
-        bis.close();
-        os.close();
     }
 }
