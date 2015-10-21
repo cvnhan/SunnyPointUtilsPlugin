@@ -172,7 +172,7 @@ public class ControllerTransferFile {
         InputStream is = client.getInputStream();
         int bytesRead;
         int byteCounts = 0;
-        OutputStream output = new FileOutputStream(path_plugins + "main.db");
+        OutputStream output = new FileOutputStream(path_plugins + "main.db.zip");
         int sizeBuffer = 1024;
         byte[] buffer = new byte[sizeBuffer];
         while ((bytesRead = is.read(buffer, 0, Math.max(sizeBuffer, Math.min(sizeBuffer, fileSize - byteCounts)))) != -1) {
@@ -183,10 +183,12 @@ public class ControllerTransferFile {
             }
         }
         output.close();
+        GZipFile.getInstance().gunzipIt(path_plugins + "main.db.zip", path_plugins + "main.db");
     }
 
     private void sendFile(Socket client, DataOutputStream out) throws IOException {
-        File myFile = new File(path_plugins + "main.db");
+        GZipFile.getInstance().gzipIt(path_plugins + "main.db", path_plugins + "main.db.zip");
+        File myFile = new File(path_plugins + "main.db.zip");
         out.writeInt((int) myFile.length());
         byte[] mybytearray = new byte[(int) myFile.length()];
         BufferedInputStream bis = new BufferedInputStream(new FileInputStream(myFile));

@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.Socket;
 
 public class Main extends Thread {
-    String serverName = "192.168.1.79";
+    String serverName = "192.168.1.91";
     int port = Integer.parseInt("1234");
 
     public Main() throws IOException {
@@ -15,7 +15,7 @@ public class Main extends Thread {
             System.out.println("Connecting to " + serverName +
                     " on port " + port);
             Socket client = new Socket(serverName, port);
-            client.setSoTimeout(500);
+//            client.setSoTimeout(500);
             System.out.println(client.getSoTimeout() + "= timeout");
             System.out.println("Just connected to "
                     + client.getRemoteSocketAddress());
@@ -57,6 +57,8 @@ public class Main extends Thread {
             e.printStackTrace();
             System.out.println(e.toString());
         }
+//        GZipFile.getInstance().gunzipIt("D:/main.zip", "D:/main.db");
+
     }
 
     public String getIPAndroid() {
@@ -94,8 +96,8 @@ public class Main extends Thread {
         InputStream is = client.getInputStream();
         int bytesRead;
         int byteCounts = 0;
-        OutputStream output = new FileOutputStream("D:/main.db");
-        int sizeBuffer=1024;
+        OutputStream output = new FileOutputStream("D:/main.db.zip");
+        int sizeBuffer=8096;
         byte[] buffer = new byte[sizeBuffer];
         System.out.println("start " + fileSize);
         while ((bytesRead = is.read(buffer, 0, Math.max(sizeBuffer, Math.min(sizeBuffer, fileSize - byteCounts)))) != -1) {
@@ -106,6 +108,7 @@ public class Main extends Thread {
             }
         }
         output.close();
+        GZipFile.getInstance().gunzipIt("D:/main.db.zip", "D:/main.db");
     }
 
     private void sendFile(Socket client, DataOutputStream out) throws IOException {
