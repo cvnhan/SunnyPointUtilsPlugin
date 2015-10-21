@@ -144,10 +144,20 @@ public class ControllerTransferFile {
     }
 
     private void inputIPAddr() {
-        String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), getIPAndroid() + ":" + port, null);
-        int index = hostStr.indexOf(":");
-        serverName = hostStr.substring(0, index);
-        port = Integer.parseInt(hostStr.substring(index + 1));
+        try {
+            String ipSample=getIPAndroid();
+            String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), ipSample + ":" + port, null);
+            if(hostStr==null){
+                hostStr=ipSample+":1234";
+            }
+            int index = hostStr.indexOf(":");
+            serverName = hostStr.substring(0, index);
+            port = Integer.parseInt(hostStr.substring(index + 1));
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            serverName = "localhost";
+            port = 1234;
+        }
     }
 
     private String getIPAndroid() {
@@ -161,15 +171,15 @@ public class ControllerTransferFile {
             String line;
             while (true) {
                 line = r.readLine();
+                if (line == null) {
+                    break;
+                }
                 if (line.contains("0x00001043")) {
 //                    wlan0    UP                                192.168.1.79/24  0x00001043 b4:52:7d:c5:8b:69
                     int index = line.indexOf("/24");
                     line = line.substring(0, index);
                     index = line.lastIndexOf(" ");
                     host = line.substring(index + 1);
-                    break;
-                }
-                if (line == null) {
                     break;
                 }
             }
@@ -218,7 +228,7 @@ public class ControllerTransferFile {
 
     private static final class Lock {
         public boolean success = false;
-        public String message="";
+        public String message = "";
     }
 
     public class SocketClientTransferFile extends Thread {

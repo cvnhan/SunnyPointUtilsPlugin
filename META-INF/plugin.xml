@@ -11,6 +11,11 @@
       <em>- Get db via socket android device</em><br>
       <em>- Get db via socket get file</em><br>
       <em>- Get db via socket send file</em><br>
+      <em>--------Make sure setup Environment Variables for--------</em><br>
+      <em>- jar (jdk\bin)</em><br>
+      <em>- g++ (mingw\bin)</em><br>
+      <em>- adb (adb portable)</em><br>
+      <em> make sure ping ok to device if you want to use socket function</em>
     ]]></description>
 
   <change-notes><![CDATA[
