@@ -10,7 +10,7 @@ import java.util.zip.GZIPOutputStream;
 
 public class GZipFile {
     private static GZipFile instance = new GZipFile();
-
+    private static int BUFFER_SIZE=8*1024;
     public static GZipFile getInstance() {
         return instance;
     }
@@ -20,7 +20,7 @@ public class GZipFile {
      */
     public void gzipIt(String sourceFile, String ouputGzipFile) {
 
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[BUFFER_SIZE];
 
         try {
 
@@ -52,7 +52,7 @@ public class GZipFile {
      */
     public void gunzipIt(String inputGzipFile, String outputFile) {
 
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[BUFFER_SIZE];
 
         try {
 

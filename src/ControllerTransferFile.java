@@ -1,3 +1,7 @@
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.Messages;
 
@@ -15,8 +19,6 @@ public class ControllerTransferFile {
     public static final String SETFILESK_COMMAND = "setFilesk";
 
     private static ControllerTransferFile instance = new ControllerTransferFile();
-    private static boolean isWakeupNeeded = false;
-    private final Lock lock = new Lock();
     private Runtime runtime = Runtime.getRuntime();
     private String path_plugins = "";
     private int port = 1234;
@@ -26,6 +28,7 @@ public class ControllerTransferFile {
         path_plugins = this.getClass().getResource("sqlitebrowser").getPath().replace("file:/", "").replace("SunnyPoint.jar!/sqlitebrowser", "");
 //        Messages.showErrorDialog(path_plugins + "sqlitebrowser/config.txt", "path");
         extractResource();
+        Notifications.Bus.register(Constant.GROUND_ID, NotificationDisplayType.BALLOON);
     }
 
     public static ControllerTransferFile getInstance() {
@@ -41,7 +44,7 @@ public class ControllerTransferFile {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            Messages.showErrorDialog(e.toString(), "error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error extract", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -56,9 +59,7 @@ public class ControllerTransferFile {
 
         } catch (Exception e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "UnRoot error");
-
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error actionOpenFile", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -68,20 +69,10 @@ public class ControllerTransferFile {
             extractResource();
             Thread t = new SocketClientTransferFile(TransferType.RECEIVE);
             t.start();
-            synchronized (lock) {
-                while (!isWakeupNeeded) {
-                    lock.wait();
-                }
-                if (lock.success == false) {
-                    Messages.showErrorDialog("Action Error", "Socket error");
-                }
-                isWakeupNeeded = false;
-
-            }
         } catch (Exception e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "Socket error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error SocketReceiveFile", e.toString(), NotificationType.ERROR));
+
         }
     }
 
@@ -91,36 +82,26 @@ public class ControllerTransferFile {
             extractResource();
             Thread t = new SocketClientTransferFile(TransferType.SEND);
             t.start();
-            synchronized (lock) {
-                while (!isWakeupNeeded) {
-                    lock.wait();
-                }
-                if (lock.success == false) {
-                    Messages.showErrorDialog("Action Error", "Socket error");
-                }
-                isWakeupNeeded = false;
-
-            }
         } catch (Exception e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "Socket error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error SocketSendFile", e.toString(), NotificationType.ERROR));
+//            Messages.showErrorDialog(e.toString(), "Socket error");
         }
     }
 
     private void setupConnect(TransferType type) {
-        //System.out.println("Connecting to " + serverName + " on port " + port);
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Connecting...","Connecting to " + serverName + " on port " + port, NotificationType.INFORMATION));
         Socket client = null;
         try {
             client = new Socket(serverName, port);
         } catch (IOException e) {
             e.printStackTrace();
-            lock.success = false;
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error setupConnect", e.toString(), NotificationType.ERROR));
             return;
         }
         try {
             //System.out.println("Just connected to " + client.getRemoteSocketAddress());
-
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Socket status", "Connected to "+client.getRemoteSocketAddress(), NotificationType.INFORMATION));
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
             if (type == TransferType.RECEIVE) {
@@ -129,18 +110,18 @@ public class ControllerTransferFile {
                 DataInputStream in =
                         new DataInputStream(inFromServer);
                 int fileSize = in.readInt();
-                receiveFile(client, fileSize);
+                receiveFile(inFromServer, fileSize);
                 actionOpenFile();
             } else if (type == TransferType.SEND) {
                 out.writeUTF(SETFILESK_COMMAND);
-                sendFile(client, out);
+                sendFile(out);
             }
             if (client != null)
                 client.close();
         } catch (IOException e) {
             e.printStackTrace();
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error talk", e.toString(), NotificationType.ERROR));
         }
-        lock.success = true;
     }
 
     private void inputIPAddr() {
@@ -185,17 +166,17 @@ public class ControllerTransferFile {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error getIPAndroid", e.toString(), NotificationType.ERROR));
         }
         return host;
     }
 
-    private void receiveFile(Socket client, int fileSize) throws IOException {
-        InputStream is = client.getInputStream();
+    private void receiveFile(InputStream is, int fileSize) throws IOException {
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Action receiveFile","Begin to receive file zip - "+fileSize, NotificationType.INFORMATION));
         int bytesRead;
         int byteCounts = 0;
         OutputStream output = new FileOutputStream(path_plugins + "main.db.zip");
-        int sizeBuffer = 8096;
+        int sizeBuffer = Constant.BUFFER_SIZE;
         byte[] buffer = new byte[sizeBuffer];
         while ((bytesRead = is.read(buffer, 0, Math.max(sizeBuffer, Math.min(sizeBuffer, fileSize - byteCounts)))) != -1) {
             output.write(buffer, 0, bytesRead);
@@ -205,30 +186,30 @@ public class ControllerTransferFile {
             }
         }
         output.close();
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"GZIP","Unzip.......", NotificationType.INFORMATION));
         GZipFile.getInstance().gunzipIt(path_plugins + "main.db.zip", path_plugins + "main.db");
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Notification","Receive file successfully!", NotificationType.INFORMATION));
     }
 
-    private void sendFile(Socket client, DataOutputStream out) throws IOException {
+    private void sendFile(DataOutputStream out) throws IOException {
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"GZIP","Zip.......", NotificationType.INFORMATION));
         GZipFile.getInstance().gzipIt(path_plugins + "main.db", path_plugins + "main.db.zip");
         File myFile = new File(path_plugins + "main.db.zip");
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Action sendFile","Begin send ..... - "+myFile.length(), NotificationType.INFORMATION));
         out.writeInt((int) myFile.length());
-        byte[] mybytearray = new byte[(int) myFile.length()];
+        byte[] buffer = new byte[Constant.BUFFER_SIZE];
         BufferedInputStream bis = new BufferedInputStream(new FileInputStream(myFile));
-        bis.read(mybytearray, 0, mybytearray.length);
-        OutputStream os = client.getOutputStream();
-        os.write(mybytearray, 0, mybytearray.length);
-        os.flush();
+        int len;
+        while ((len = bis.read(buffer)) > 0) {
+            out.write(buffer, 0, len);
+        }
         bis.close();
-        os.close();
+        out.close();
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Notification","Send file successfully!", NotificationType.INFORMATION));
     }
 
     enum TransferType {
         SEND, RECEIVE
-    }
-
-    private static final class Lock {
-        public boolean success = false;
-        public String message = "";
     }
 
     public class SocketClientTransferFile extends Thread {
@@ -242,15 +223,9 @@ public class ControllerTransferFile {
         public void run() {
             try {
                 setupConnect(type);
-                isWakeupNeeded = false;
             } catch (Exception e) {
-                //System.out.println(e.toString());
                 e.printStackTrace();
-            } finally {
-                synchronized (lock) {
-                    isWakeupNeeded = true;
-                    lock.notifyAll();
-                }
+                Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error run SocketClient", e.toString(), NotificationType.ERROR));
             }
         }
     }

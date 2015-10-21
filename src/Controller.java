@@ -1,4 +1,8 @@
 import com.google.gson.Gson;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.project.Project;
@@ -16,8 +20,6 @@ public class Controller {
 //            cmd.exe /c cd C:\Users\NhanCao\.IntelliJIdea14\config\plugins\SunnyPoint\lib && jar xf SunnyPoint.jar sqlitebrowser
 
     private static Controller instance = new Controller();
-    private static boolean isWakeupNeeded = false;
-    private final Lock lock = new Lock();
     private Runtime runtime = Runtime.getRuntime();
     private String path_plugins = "";
     private int port = 1234;
@@ -27,6 +29,7 @@ public class Controller {
         path_plugins = this.getClass().getResource("sqlitebrowser").getPath().replace("file:/", "").replace("SunnyPoint.jar!/sqlitebrowser", "");
 //        Messages.showErrorDialog(path_plugins + "sqlitebrowser/config.txt", "path");
         extractResource();
+        Notifications.Bus.register(Constant.GROUND_ID, NotificationDisplayType.BALLOON);
     }
 
     public static Controller getInstance() {
@@ -42,7 +45,7 @@ public class Controller {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            Messages.showErrorDialog(e.toString(), "error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error extract", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -61,7 +64,7 @@ public class Controller {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Messages.showErrorDialog(e.toString(), "error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error actionRooted", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -73,12 +76,9 @@ public class Controller {
                 runtime.exec("TASKKILL /F /IM sqliteman.exe");
                 runtime.exec(path_plugins + "sqlitebrowser/getdb.exe " + Constant.COMMAND_UNROOT + " " + path_plugins);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "UnRoot error");
-
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error actionUnRoot", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -95,73 +95,68 @@ public class Controller {
             extractResource();
             Thread t = new SocketClient();
             t.start();
-            synchronized (lock) {
-                while (!isWakeupNeeded) {
-                    lock.wait();
-                }
-                if (lock.success == false) {
-                    try {
-                        writeConfigFile("");
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    Messages.showErrorDialog("Connect Error. Check by ping", "Socket error");
-                }
-                isWakeupNeeded = false;
-
-            }
-
         } catch (Exception e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
-            Messages.showErrorDialog(e.toString(), "Socket error");
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error actionSocket", e.toString(), NotificationType.ERROR));
         }
     }
 
     private void setupConnect() {
         //System.out.println("Connecting to " + serverName + " on port " + port);
+        Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Connecting...","Connecting to " + serverName + " on port " + port, NotificationType.INFORMATION));
         Socket client = null;
         try {
             client = new Socket(serverName, port);
         } catch (IOException e) {
             e.printStackTrace();
-            lock.success = false;
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error setupConnect", e.toString(), NotificationType.ERROR));
             return;
         }
         try {
-            //System.out.println("Just connected to " + client.getRemoteSocketAddress());
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Socket status", "Connected to "+client.getRemoteSocketAddress(), NotificationType.INFORMATION));
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
-//            out.writeUTF("Hello from "
-//                    + client.getLocalSocketAddress());
             out.writeUTF("getDB");
             InputStream inFromServer = client.getInputStream();
             DataInputStream in =
                     new DataInputStream(inFromServer);
-            if (in.readUTF().contains("Ok")) {
+            String response=in.readUTF();
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID,"Response",response, NotificationType.INFORMATION));
+            if (response.contains("Ok")) {
                 actionUnRoot(null);
             }
-            //System.out.println("Server says " + in.readUTF());
+
             if (client != null)
                 client.close();
         } catch (IOException e) {
             e.printStackTrace();
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error talk", e.toString(), NotificationType.ERROR));
         }
-        lock.success = true;
     }
 
     private void inputIPAddr() {
-        String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), getIPAndroid() + ":" + port, null);
-        int index = hostStr.indexOf(":");
-        serverName = hostStr.substring(0, index);
-        port = Integer.parseInt(hostStr.substring(index + 1));
-
-        Gson gson = new Gson();
-        String json = gson.toJson(new Config(serverName, port));
         try {
-            writeConfigFile(json);
-        } catch (IOException e1) {
-            e1.printStackTrace();
+            String ipSample=getIPAndroid();
+            String hostStr = Messages.showInputDialog("What is your host?", "Input your host address", Messages.getQuestionIcon(), ipSample + ":" + port, null);
+            if(hostStr==null){
+                hostStr=ipSample+":1234";
+            }
+            int index = hostStr.indexOf(":");
+            serverName = hostStr.substring(0, index);
+            port = Integer.parseInt(hostStr.substring(index + 1));
+
+            Gson gson = new Gson();
+            String json = gson.toJson(new Config(serverName, port));
+            try {
+                writeConfigFile(json);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            serverName = "localhost";
+            port = 1234;
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error NumberFormatException", e.toString(), NotificationType.ERROR));
         }
     }
 
@@ -176,6 +171,9 @@ public class Controller {
             String line;
             while (true) {
                 line = r.readLine();
+                if (line == null) {
+                    break;
+                }
                 if (line.contains("0x00001043")) {
 //                    wlan0    UP                                192.168.1.79/24  0x00001043 b4:52:7d:c5:8b:69
                     int index = line.indexOf("/24");
@@ -184,13 +182,10 @@ public class Controller {
                     host = line.substring(index + 1);
                     break;
                 }
-                if (line == null) {
-                    break;
-                }
             }
         } catch (IOException e) {
             e.printStackTrace();
-            //System.out.println(e.toString());
+            Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error getIPAndroid", e.toString(), NotificationType.ERROR));
         }
         return host;
     }
@@ -207,10 +202,6 @@ public class Controller {
         writer.close();
     }
 
-    private static final class Lock {
-        public boolean success = false;
-    }
-
     public class SocketClient extends Thread {
         public SocketClient() throws IOException {
 //            serverName = getIPAndroid();
@@ -219,18 +210,15 @@ public class Controller {
         public void run() {
             try {
                 setupConnect();
-                isWakeupNeeded = false;
             } catch (Exception e) {
-                //System.out.println(e.toString());
-                e.printStackTrace();
-            } finally {
-                synchronized (lock) {
-                    isWakeupNeeded = true;
-                    lock.notifyAll();
+                try {
+                    writeConfigFile("");
+                } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
+                e.printStackTrace();
+                Notifications.Bus.notify(new Notification(Constant.GROUND_ID, "Error run SocketClient", e.toString(), NotificationType.ERROR));
             }
         }
     }
-
-
 }
