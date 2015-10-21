@@ -6,7 +6,6 @@ import com.intellij.openapi.ui.Messages;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 
 /**
  * Created by NhanCao on 19-Oct-15.
@@ -101,7 +100,12 @@ public class Controller {
                     lock.wait();
                 }
                 if (lock.success == false) {
-                    inputIPAddr();
+                    try {
+                        writeConfigFile("");
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    Messages.showErrorDialog("Connect Error. Check by ping", "Socket error");
                 }
                 isWakeupNeeded = false;
 
@@ -120,13 +124,6 @@ public class Controller {
         try {
             client = new Socket(serverName, port);
         } catch (IOException e) {
-            e.printStackTrace();
-            lock.success = false;
-            return;
-        }
-        try {
-            client.setSoTimeout(500);
-        } catch (SocketException e) {
             e.printStackTrace();
             lock.success = false;
             return;

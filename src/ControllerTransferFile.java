@@ -3,7 +3,6 @@ import com.intellij.openapi.ui.Messages;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 
 /**
  * Created by NhanCao on 19-Oct-15.
@@ -69,6 +68,16 @@ public class ControllerTransferFile {
             extractResource();
             Thread t = new SocketClientTransferFile(TransferType.RECEIVE);
             t.start();
+            synchronized (lock) {
+                while (!isWakeupNeeded) {
+                    lock.wait();
+                }
+                if (lock.success == false) {
+                    Messages.showErrorDialog("Action Error", "Socket error");
+                }
+                isWakeupNeeded = false;
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
             //System.out.println(e.toString());
@@ -82,6 +91,16 @@ public class ControllerTransferFile {
             extractResource();
             Thread t = new SocketClientTransferFile(TransferType.SEND);
             t.start();
+            synchronized (lock) {
+                while (!isWakeupNeeded) {
+                    lock.wait();
+                }
+                if (lock.success == false) {
+                    Messages.showErrorDialog("Action Error", "Socket error");
+                }
+                isWakeupNeeded = false;
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
             //System.out.println(e.toString());
@@ -95,13 +114,6 @@ public class ControllerTransferFile {
         try {
             client = new Socket(serverName, port);
         } catch (IOException e) {
-            e.printStackTrace();
-            lock.success = false;
-            return;
-        }
-        try {
-            client.setSoTimeout(500);
-        } catch (SocketException e) {
             e.printStackTrace();
             lock.success = false;
             return;
@@ -173,7 +185,7 @@ public class ControllerTransferFile {
         int bytesRead;
         int byteCounts = 0;
         OutputStream output = new FileOutputStream(path_plugins + "main.db.zip");
-        int sizeBuffer = 1024;
+        int sizeBuffer = 8096;
         byte[] buffer = new byte[sizeBuffer];
         while ((bytesRead = is.read(buffer, 0, Math.max(sizeBuffer, Math.min(sizeBuffer, fileSize - byteCounts)))) != -1) {
             output.write(buffer, 0, bytesRead);
@@ -206,6 +218,7 @@ public class ControllerTransferFile {
 
     private static final class Lock {
         public boolean success = false;
+        public String message="";
     }
 
     public class SocketClientTransferFile extends Thread {
